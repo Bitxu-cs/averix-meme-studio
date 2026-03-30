@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 1. SECURITY: Cross-Origin Isolation Handler -->
+    <script src="coi-serviceworker.js"></script>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Averix Meme Studio | Elite Video Engine</title>
+    
+    <!-- UI Frameworks -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #0B0B0B;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+        }
+
+        .electric-glow {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #FFFFFF 0%, #7C3AED 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .upload-zone {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px dashed rgba(124, 58, 237, 0.3);
+        }
+
+        .upload-zone:hover {
+            border-color: #7C3AED;
+            background: rgba(124, 58, 237, 0.05);
+        }
+
+        /* Custom Progress Bar */
+        progress::-webkit-progress-bar { background-color: rgba(255,255,255,0.1); border-radius: 10px; }
+        progress::-webkit-progress-value { background-color: #7C3AED; border-radius: 10px; transition: width 0.5s ease; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <!-- Header -->
+    <header class="w-full max-w-5xl flex justify-between items-center mb-12">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-[#7C3AED] rounded-lg flex items-center justify-center">
+                <i data-lucide="zap" class="text-white fill-current"></i>
+            </div>
+            <h1 class="text-2xl font-800 tracking-tighter uppercase italic gradient-text">
+                Averix Meme Studio
+            </h1>
+        </div>
+        <div class="hidden md:block text-xs uppercase tracking-widest text-gray-500 font-semibold">
+            High-Performance Rendering Engine v1.0
+        </div>
+    </header>
+
+    <main class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Left Column: Inputs -->
+        <div class="space-y-6">
+            <div class="glass p-8 space-y-6">
+                <h2 class="text-xl font-semibold flex items-center gap-2">
+                    <i data-lucide="layers" class="text-[#7C3AED]"></i> Asset Configuration
+                </h2>
+
+                <!-- Step 1: Meme -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 1: Primary Meme</label>
+                    <div class="upload-zone rounded-xl p-6 text-center cursor-pointer relative" id="drop-meme">
+                        <input type="file" id="input-meme" class="absolute inset-0 opacity-0 cursor-pointer" accept="video/*,image/*">
+                        <i data-lucide="clapperboard" class="mx-auto mb-2 text-gray-500"></i>
+                        <p class="text-sm" id="label-meme">Select or Drop Top Video (60%)</p>
+                    </div>
+                </div>
+
+                <!-- Step 2: Reaction -->
+                <div class="space-y-2">
+                    <label class="text-sm font-medium text-gray-400 uppercase tracking-wider">Step 2: Reaction</label>
+                    <div class="upload-zone rounded-xl p-6 text-center cursor-pointer relative" id="drop-reaction">
+                        <input type="file" id="input-reaction" class="absolute inset-0 opacity-0 cursor-pointer" accept="video/*,image/*">
+                        <i data-lucide="smile" class="mx-auto mb-2 text-gray-500"></i>
+                        <p class="text-sm" id="label-reaction">Select or Drop Bottom Video (40%)</p>
+                    </div>
+                </div>
+
+                <button id="btn-process" class="w-full py-4 bg-[#7C3AED] hover:bg-[#6D28D9] disabled:bg-gray-800 disabled:text-gray-500 rounded-xl font-bold text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 electric-glow">
+                    <i data-lucide="cpu"></i> GENERATE MASTERPIECE
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Preview/Status -->
+        <div class="space-y-6">
+            <div class="glass p-8 min-h-[400px] flex flex-col items-center justify-center text-center relative overflow-hidden">
+                
+                <!-- Idle State -->
+                <div id="state-idle" class="space-y-4">
+                    <div class="w-20 h-20 border-2 border-dashed border-gray-700 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="monitor-play" class="text-gray-700 w-8 h-8"></i>
+                    </div>
+                    <p class="text-gray-500 max-w-[200px] mx-auto">Upload your assets to begin the 9:16 rendering process.</p>
+                </div>
+
+                <!-- Loading State -->
+                <div id="state-loading" class="hidden space-y-6 w-full">
+                    <div class="relative w-24 h-24 mx-auto">
+                        <div class="absolute inset-0 border-4 border-[#7C3AED] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-1">Rendering your Vision...</h3>
+                        <p class="text-gray-400 text-sm italic">Engineered for perfection.</p>
+                    </div>
+                    <div class="w-full space-y-2">
+                        <div class="flex justify-between text-xs font-mono text-[#7C3AED]">
+                            <span>FFMPEG_CORE</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <progress id="render-progress" class="w-full h-2 rounded-full overflow-hidden" value="0" max="100"></progress>
+                    </div>
+                </div>
+
+                <!-- Result State -->
+                <div id="state-result" class="hidden space-y-6 w-full">
+                    <div class="relative aspect-[9/16] h-[400px] mx-auto bg-black rounded-lg overflow-hidden border border-white/10 shadow-2xl">
+                        <video id="output-video" controls class="w-full h-full object-contain"></video>
+                    </div>
+                    <a id="btn-download" class="inline-flex items-center gap-2 px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">
+                        <i data-lucide="download"></i> DOWNLOAD MP4 (8S)
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- FFmpeg Scripts -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+
+    <script>
+        const { FFmpeg } = FFmpegWasm;
+        const { fetchFile, toBlobURL } = FFmpegUtil;
+
+        let ffmpeg = null;
+        const inputMeme = document.getElementById('input-meme');
+        const inputReaction = document.getElementById('input-reaction');
+        const btnProcess = document.getElementById('btn-process');
+        
+        // UI Elements
+        const stateIdle = document.getElementById('state-idle');
+        const stateLoading = document.getElementById('state-loading');
+        const stateResult = document.getElementById('state-result');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressBar = document.getElementById('render-progress');
+        const outputVideo = document.getElementById('output-video');
+        const btnDownload = document.getElementById('btn-download');
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Handle File Labels
+        inputMeme.addEventListener('change', (e) => {
+            document.getElementById('label-meme').innerText = e.target.files[0].name;
+            document.getElementById('label-meme').classList.add('text-[#7C3AED]', 'font-bold');
+        });
+
+        inputReaction.addEventListener('change', (e) => {
+            document.getElementById('label-reaction').innerText = e.target.files[0].name;
+            document.getElementById('label-reaction').classList.add('text-[#7C3AED]', 'font-bold');
+        });
+
+        async function initFFmpeg() {
+            if (ffmpeg) return ffmpeg;
+            
+            ffmpeg = new FFmpeg();
+            
+            // Progress tracking
+            ffmpeg.on('progress', ({ progress }) => {
+                const p = Math.round(progress * 100);
+                progressPercent.innerText = `${p}%`;
+                progressBar.value = p;
+            });
+
+            const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+            await ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+            return ffmpeg;
+        }
+
+        btnProcess.addEventListener('click', async () => {
+            if (!inputMeme.files[0] || !inputReaction.files[0]) {
+                alert("Please upload both a Meme and a Reaction video.");
+                return;
+            }
+
+            try {
+                // UI Switch
+                stateIdle.classList.add('hidden');
+                stateResult.classList.add('hidden');
+                stateLoading.classList.remove('hidden');
+                btnProcess.disabled = true;
+
+                const instance = await initFFmpeg();
+                
+                const memeFile = inputMeme.files[0];
+                const reactionFile = inputReaction.files[0];
+
+                await instance.writeFile('meme_in', await fetchFile(memeFile));
+                await instance.writeFile('reaction_in', await fetchFile(reactionFile));
+
+                /**
+                 * FFmpeg Logic:
+                 * 1. Loop both inputs (-stream_loop -1)
+                 * 2. Scale and crop to exact dimensions:
+                 *    - Meme: 1080x1152 (Top 60%)
+                 *    - Reaction: 1080x768 (Bottom 40%)
+                 * 3. vstack them
+                 * 4. Limit to 8 seconds (-t 8)
+                 * 5. Mix audio or take primary
+                 */
+                const filter = [
+                    // Process Top Video
+                    `[0:v]stream_loop -1,scale=1080:1152:force_original_aspect_ratio=increase,crop=1080:1152[top];`,
+                    // Process Bottom Video
+                    `[1:v]stream_loop -1,scale=1080:768:force_original_aspect_ratio=increase,crop=1080:768[bottom];`,
+                    // Stack
+                    `[top][bottom]vstack=inputs=2[v];`,
+                    // Mix Audio
+                    `[0:a][1:a]amix=inputs=2:duration=first[a]`
+                ].join('');
+
+                await instance.exec([
+                    '-i', 'meme_in',
+                    '-i', 'reaction_in',
+                    '-filter_complex', filter,
+                    '-map', '[v]',
+                    '-map', '[a]',
+                    '-t', '8',
+                    '-c:v', 'libx264',
+                    '-preset', 'ultrafast',
+                    '-pix_fmt', 'yuv420p',
+                    'output.mp4'
+                ]);
+
+                const data = await instance.readFile('output.mp4');
+                const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+                
+                // Show Result
+                outputVideo.src = url;
+                btnDownload.href = url;
+                btnDownload.download = `Averix_Meme_${Date.now()}.mp4`;
+                
+                stateLoading.classList.add('hidden');
+                stateResult.classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred during rendering. Ensure COOP/COEP headers are active.");
+                stateLoading.classList.add('hidden');
+                stateIdle.classList.remove('hidden');
+            } finally {
+                btnProcess.disabled = false;
+            }
+        });
+    </script>
+</body>
+      </html>
